@@ -296,29 +296,37 @@ def BuildBootableImage(sourcedir, fs_config_file, info_dict=None):
   data, or None if sourcedir does not appear to contains files for
   building the requested image."""
 
-  if (not os.access(os.path.join(sourcedir, "RAMDISK"), os.F_OK) or
+  if (((not os.access(os.path.join(sourcedir, "RAMDISK"), os.F_OK)) or
+      not os.access(os.path.join(sourcedir, "ramdisk.img"), os.F_OK)) or
       not os.access(os.path.join(sourcedir, "kernel"), os.F_OK)):
     return None
 
   if info_dict is None:
     info_dict = OPTIONS.info_dict
 
-  ramdisk_img = tempfile.NamedTemporaryFile()
   img = tempfile.NamedTemporaryFile()
   bootimg_key = os.getenv("PRODUCT_PRIVATE_KEY", None)
 
-  if os.access(fs_config_file, os.F_OK):
-    cmd = ["mkbootfs", "-f", fs_config_file, os.path.join(sourcedir, "RAMDISK")]
+  # prefer the pre-built ramdisk, otherwise build a new from RAMDISK
+  if os.access(os.path.join(sourcedir, "ramdisk.img"), os.F_OK):
+    ramdisk = os.path.join(sourcedir, "ramdisk.img")
   else:
-    cmd = ["mkbootfs", os.path.join(sourcedir, "RAMDISK")]
-  p1 = Run(cmd, stdout=subprocess.PIPE)
-  p2 = Run(["minigzip"],
-           stdin=p1.stdout, stdout=ramdisk_img.file.fileno())
+    ramdisk_img = tempfile.NamedTemporaryFile()
+    ramdisk = ramdisk_img.name
 
-  p2.wait()
-  p1.wait()
-  assert p1.returncode == 0, "mkbootfs of %s ramdisk failed" % (targetname,)
-  assert p2.returncode == 0, "minigzip of %s ramdisk failed" % (targetname,)
+    if os.access(fs_config_file, os.F_OK):
+      cmd = ["mkbootfs", "-f", fs_config_file, os.path.join(sourcedir, "RAMDISK")]
+    else:
+      cmd = ["mkbootfs", os.path.join(sourcedir, "RAMDISK")]
+    p1 = Run(cmd, stdout=subprocess.PIPE)
+    p2 = Run(["minigzip"],
+             stdin=p1.stdout, stdout=ramdisk_img.file.fileno())
+
+    p2.wait()
+    p1.wait()
+    assert p1.returncode == 0, "mkbootfs of %s ramdisk failed" % (targetname,)
+    assert p2.returncode == 0, "minigzip of %s ramdisk failed" % (targetname,)
+    ramdisk_img.close()
 
   """check if uboot is requested"""
   fn = os.path.join(sourcedir, "ubootargs")
@@ -380,7 +388,7 @@ def BuildBootableImage(sourcedir, fs_config_file, info_dict=None):
     if args and args.strip():
       cmd.extend(shlex.split(args))
 
-    cmd.extend(["--ramdisk", ramdisk_img.name,
+    cmd.extend(["--ramdisk", ramdisk,
                 "--output", img.name])
   p = Run(cmd, stdout=subprocess.PIPE)
   p.communicate()
@@ -433,7 +441,6 @@ def BuildBootableImage(sourcedir, fs_config_file, info_dict=None):
   img.seek(os.SEEK_SET, 0)
   data = img.read()
 
-  ramdisk_img.close()
   img.close()
 
   return data
