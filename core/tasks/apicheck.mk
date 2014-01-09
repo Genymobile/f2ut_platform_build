@@ -18,7 +18,8 @@
 #
 
 # skip api check for PDK buid
-ifeq (,$(filter true, $(WITHOUT_CHECK_API) $(TARGET_BUILD_PDK)))
+#ifeq (,$(filter true, $(WITHOUT_CHECK_API) $(TARGET_BUILD_PDK)))
+ifeq (true, false)
 
 .PHONY: checkapi
 

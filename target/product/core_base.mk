@@ -27,6 +27,7 @@ PRODUCT_PACKAGES += \
     libaudioutils \
     libfilterpack_imageproc \
     libgabi++ \
+    libinput \
     libmdnssd \
     libnfc_ndef \
     libpowermanager \
@@ -54,7 +55,39 @@ PRODUCT_PACKAGES += \
     libvariablespeed \
     libwebrtc_audio_preprocessing \
     mdnsd \
+    recovery_resize2fs \
     requestsync \
-    wifi-service
+    libadf \
+    libutils \
+    libz \
+    libpng \
+    libsuspend \
+    libbatteryservice \
+    libbinder \
+    libminui \
+    healthd
+
+# for Ubuntu Touch (hybris, platform-api, utils, etc)
+PRODUCT_PACKAGES += \
+    apns-conf.xml \
+    libcamera_compat_layer \
+    camera_service \
+    libis_compat_layer \
+    libmedia_compat_layer \
+    libsf_compat_layer \
+    libui_compat_layer \
+    libubuntu_application_api \
+    upstart-property-watcher
+
+# for testing
+PRODUCT_PACKAGES += \
+    autopilot-finger.idc \
+    direct_camera_test \
+    direct_input_test \
+    direct_media_test \
+    direct_sf_test \
+    direct_ubuntu_application_sensors_c_api_for_hybris_test \
+    direct_ubuntu_application_sensors_for_hybris_test \
+    direct_ubuntu_application_gps_c_api_for_hybris_test
 
 $(call inherit-product, $(SRC_TARGET_DIR)/product/core_minimal.mk)

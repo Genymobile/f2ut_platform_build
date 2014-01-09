@@ -473,9 +473,145 @@ endif
 
 else	# !SDK_ONLY
 #
-# Typical build; include any Android.mk files we can find.
+# Include select projects needed for Ubuntu Touch only
 #
-subdirs := $(TOP)
+
+subdirs := \
+	abi/cpp \
+	bionic \
+	bootable/recovery \
+	build/libs \
+	build/target \
+	build/tools/acp \
+	build/tools/check_prereq \
+	build/tools/fs_config \
+	build/tools/zipalign \
+	development/tools/emulator/opengl \
+	external/aac \
+	external/busybox \
+	external/bzip2 \
+	external/checkpolicy \
+	external/compiler-rt \
+	external/e2fsprogs \
+	external/expat \
+	external/flac \
+	external/freetype \
+	external/fsck_msdos \
+	external/gcc-demangle \
+	external/genext2fs \
+	external/giflib \
+	external/gtest \
+	external/icu/icu4c \
+	external/jemalloc \
+	external/jhead \
+	external/jpeg \
+	external/jsmn \
+	external/jsoncpp \
+	external/libcxx \
+	external/libcxxabi \
+	external/liblzf \
+	external/libnl \
+	external/libgsm \
+	external/libpng \
+	external/libvpx \
+	external/libogg \
+	external/libopus \
+	external/libselinux \
+	external/libsepol \
+	external/libunwind \
+	external/mdnsresponder \
+	external/mksh \
+	external/openssl \
+	external/pcre \
+	external/pigz \
+	external/protobuf \
+	external/qemu \
+	external/scrypt \
+	external/sepolicy \
+	external/sfntly \
+	external/skia \
+	external/sonivox \
+	external/speex \
+	external/sqlite \
+	external/stlport \
+	external/tinycompress \
+	external/tinyalsa \
+	external/tremolo \
+	external/webp \
+	external/webrtc \
+	external/wpa_supplicant_6 \
+	external/wpa_supplicant_8 \
+	external/yaffs2 \
+	external/zlib \
+	external/zopfli \
+	frameworks/av/camera \
+	frameworks/av/drm \
+	frameworks/av/media/common_time \
+	frameworks/av/media/libcpustats \
+	frameworks/av/media/libaah_rtp \
+	frameworks/av/media/libeffects \
+	frameworks/av/media/libmedia \
+	frameworks/av/media/libmedia_native \
+	frameworks/av/media/libmediaplayerservice \
+	frameworks/av/media/libnbaio \
+	frameworks/av/media/libstagefright \
+	frameworks/av/media/mediaserver \
+	frameworks/av/services/audioflinger \
+	frameworks/av/services/medialog \
+	frameworks/av/services/camera/libcameraservice \
+	frameworks/base/cmds/bootanimation \
+	frameworks/base/cmds/screencap \
+	frameworks/base/libs/androidfw \
+	frameworks/base/libs/diskusage \
+	frameworks/base/libs/input \
+	frameworks/native/services/inputflinger \
+	frameworks/base/tools/aapt \
+	frameworks/native/cmds/installd \
+	frameworks/native/cmds/sensorservice \
+	frameworks/native/cmds/servicemanager \
+	frameworks/native/cmds/surfaceflinger \
+	frameworks/native/libs \
+	frameworks/native/opengl \
+	frameworks/native/services \
+	frameworks/opt/emoji \
+	hardware \
+	prebuilts/tools/linux-x86/sdl \
+	sdk/emulator \
+	system/core \
+	system/vold \
+	system/bluetooth \
+	system/extras/ext4_utils \
+	system/extras/f2fs_utils \
+	system/media/audio_utils \
+	system/media/camera \
+	system/media/audio_route \
+	system/netd \
+	system/su \
+	system/security/keystore \
+	system/security/softkeymaster
+
+# device and vendor
+subdirs += \
+	device/asus \
+	device/generic \
+	device/lge \
+	device/samsung \
+	vendor/asus \
+	vendor/audience \
+	vendor/broadcom \
+	vendor/cm \
+	vendor/elan \
+	vendor/invensense \
+	vendor/lge \
+	vendor/nvidia \
+	vendor/nxp \
+	vendor/qcom \
+	vendor/samsung \
+	vendor/widevine
+
+# Specific projects for Ubuntu Touch
+subdirs += \
+	ubuntu
 
 FULL_BUILD := true
 
