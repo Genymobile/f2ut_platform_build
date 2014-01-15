@@ -31,12 +31,16 @@ from launchpadlib.launchpad import Launchpad
 cachedir = "~/.launchpadlib/cache"
 
 def main():
-    usage = "Usage: %prog [-a|--arch <arch>] [-o|--output <dir>] <package> [release]"
+    usage = "Usage: %prog [-a|--arch <arch>] [-o|--output <dir>] [-t|--team <team>] [-p|--ppa <ppa>] <package> [release]"
     opt_parser = OptionParser(usage)
     opt_parser.add_option('-a', '--arch', default='armhf', dest='ubuntu_arch',
                   help='Architecture for the binary package (default: armhf)')
     opt_parser.add_option('-o', '--output',
                   help='Directory used to output the desired package')
+    opt_parser.add_option('-t', '--team',
+                  help='Launchpad team that owns the PPA (to be used with --ppa)')
+    opt_parser.add_option('-p', '--ppa',
+                  help='PPA used to look for the binary package')
     (options, args) = opt_parser.parse_args()
     if not args:
         opt_parser.error("Must specify a package name")
@@ -47,7 +51,15 @@ def main():
     lp = Launchpad.login_anonymously('pull-lp-bin', 'production',
                                       cachedir, version="devel")
     distro = lp.distributions['ubuntu']
-    archive = lp.distributions['ubuntu'].main_archive
+
+    if options.ppa and not options.team:
+        print "To use a PPA you also need to provide a team (from Launchpad)"
+        return
+
+    if options.ppa:
+        archive = lp.people[options.team].getPPAByName(name=options.ppa)
+    else:
+        archive = lp.distributions['ubuntu'].main_archive
 
     if len(args) > 1:
         release = str(args[1])
