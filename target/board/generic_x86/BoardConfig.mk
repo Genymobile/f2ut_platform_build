@@ -5,7 +5,7 @@
 
 # The generic product target doesn't have any hardware-specific pieces.
 TARGET_NO_BOOTLOADER := true
-TARGET_NO_KERNEL := true
+TARGET_NO_KERNEL := false
 TARGET_CPU_ABI := x86
 TARGET_ARCH := x86
 TARGET_ARCH_VARIANT := x86
@@ -58,3 +58,7 @@ BOARD_SEPOLICY_UNION += \
         shell.te \
         system_server.te \
         zygote.te
+
+TARGET_KERNEL_UBUNTU := true
+TARGET_KERNEL_UBUNTU_META := linux-image-goldfish
+TARGET_KERNEL_UBUNTU_SERIES := vivid

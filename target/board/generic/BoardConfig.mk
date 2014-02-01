@@ -5,7 +5,7 @@
 
 # The generic product target doesn't have any hardware-specific pieces.
 TARGET_NO_BOOTLOADER := true
-TARGET_NO_KERNEL := true
+TARGET_NO_KERNEL := false
 TARGET_ARCH := arm
 
 # Note: we build the platform images for ARMv7-A _without_ NEON.
@@ -92,3 +92,7 @@ ifeq ($(TARGET_PRODUCT),sdk)
   # include an expanded selection of fonts for the SDK.
   EXTENDED_FONT_FOOTPRINT := true
 endif
+
+TARGET_KERNEL_UBUNTU := true
+TARGET_KERNEL_UBUNTU_META := linux-image-goldfish
+TARGET_KERNEL_UBUNTU_SERIES := vivid
