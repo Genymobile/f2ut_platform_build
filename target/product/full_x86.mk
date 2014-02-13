@@ -40,5 +40,5 @@ PRODUCT_PACKAGES += \
 # Overrides
 PRODUCT_NAME := full_x86
 PRODUCT_DEVICE := generic_x86
-PRODUCT_BRAND := Android
-PRODUCT_MODEL := AOSP on IA Emulator
+PRODUCT_BRAND := Ubuntu
+PRODUCT_MODEL := X86 Emulator
