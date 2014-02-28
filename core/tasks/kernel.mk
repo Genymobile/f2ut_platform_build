@@ -175,6 +175,7 @@ $(TARGET_OUT_UBUNTU_KERNEL)/vmlinuz: $(TARGET_OUT_UBUNTU_KERNEL) $(KERNEL_HEADER
 			dpkg-deb -x $(TARGET_OUT_UBUNTU_KERNEL)/linux-image-[0-9]*.deb $(TARGET_OUT_UBUNTU_KERNEL); \
 			kernel_version=$${kernel_image#linux-image-}; \
 			cp -v $(TARGET_OUT_UBUNTU_KERNEL)/boot/vmlinuz-$$kernel_version $(TARGET_OUT_UBUNTU_KERNEL)/vmlinuz; \
+			cp -a $(TARGET_OUT_UBUNTU_KERNEL)/boot/*-$$kernel_version $(TARGET_OUT)/boot/; \
 			cp -a $(TARGET_OUT_UBUNTU_KERNEL)/lib/modules/$$kernel_version $(KERNEL_MODULES_OUT); \
 			depmod -a -b $(TARGET_OUT) $$kernel_version; \
 		else \
