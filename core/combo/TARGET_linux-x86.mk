@@ -95,12 +95,14 @@ $(combo_2nd_arch_prefix)TARGET_GLOBAL_CFLAGS += \
 			-fstrict-aliasing \
 			-funswitch-loops \
 			-funwind-tables \
-			-fstack-protector \
 			-m32 \
 			-no-canonical-prefixes \
 			-fno-canonical-system-headers \
 			-include $(android_config_h) \
 			-I $(dir $(android_config_h))
+# FIXME: This needs to be added back once the android toolchain provided by the
+# gcc-i686-linux-android package gets fixed (LP: #1302799)
+#			-fstack-protector \
 
 $(combo_2nd_arch_prefix)TARGET_GLOBAL_CFLAGS += $(arch_variant_cflags)
 
