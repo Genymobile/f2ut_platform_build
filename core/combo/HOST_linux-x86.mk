@@ -22,8 +22,8 @@ $(combo_2nd_arch_prefix)HOST_TOOLCHAIN_PREFIX := /usr/bin
 endif
 # Don't do anything if the toolchain is not there
 ifneq (,$(strip $(wildcard $($(combo_2nd_arch_prefix)HOST_TOOLCHAIN_PREFIX)gcc)))
-$(combo_2nd_arch_prefix)HOST_CC  := $($(combo_2nd_arch_prefix)HOST_TOOLCHAIN_PREFIX)gcc
-$(combo_2nd_arch_prefix)HOST_CXX := $($(combo_2nd_arch_prefix)HOST_TOOLCHAIN_PREFIX)g++
+HOST_CC  := $(HOST_TOOLCHAIN_PREFIX)/gcc-4.8
+HOST_CXX := $(HOST_TOOLCHAIN_PREFIX)/g++-4.8
 $(combo_2nd_arch_prefix)HOST_AR  := $($(combo_2nd_arch_prefix)HOST_TOOLCHAIN_PREFIX)ar
 endif # $($(combo_2nd_arch_prefix)HOST_TOOLCHAIN_PREFIX)gcc exists
 
