@@ -983,7 +983,7 @@ $(recovery_ramdisk): $(MKBOOTFS) $(MINIGZIP) $(RECOVERYIMAGE_EXTRA_DEPS) \
 		$(INSTALLED_RAMDISK_TARGET_ANDROID) \
 		$(INSTALLED_BOOTIMAGE_TARGET) \
 		$(recovery_binary) \
-		$(recovery_initrc) $(recovery_sepolicy) \
+		$(recovery_initrc) \
 		$(INSTALLED_2NDBOOTLOADER_TARGET) \
 		$(recovery_build_prop) $(recovery_resource_deps) $(recovery_root_deps) \
 		$(recovery_fstab) \
@@ -997,7 +997,6 @@ $(recovery_ramdisk): $(MKBOOTFS) $(MINIGZIP) $(RECOVERYIMAGE_EXTRA_DEPS) \
 	$(hide) rm -f $(TARGET_RECOVERY_ROOT_OUT)/init*.rc
 	$(hide) cp -f $(recovery_initrc) $(TARGET_RECOVERY_ROOT_OUT)/
 	$(hide) rm -f $(TARGET_RECOVERY_ROOT_OUT)/sepolicy
-	$(hide) cp -f $(recovery_sepolicy) $(TARGET_RECOVERY_ROOT_OUT)/sepolicy
 	$(hide) -cp $(TARGET_ROOT_OUT)/init.recovery.*.rc $(TARGET_RECOVERY_ROOT_OUT)/
 	$(hide) cp -f $(recovery_binary) $(TARGET_RECOVERY_ROOT_OUT)/sbin/
 	$(hide) mkdir -p $(TARGET_RECOVERY_ROOT_OUT)/res
