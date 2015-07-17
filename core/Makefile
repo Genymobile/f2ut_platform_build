@@ -850,7 +850,8 @@ INTERNAL_USERIMAGES_DEPS += $(SELINUX_FC)
 define generate-userimage-prop-dictionary
 $(if $(INTERNAL_USERIMAGES_EXT_VARIANT),$(hide) echo "fs_type=$(INTERNAL_USERIMAGES_EXT_VARIANT)" >> $(1))
 $(if $(BOARD_SYSTEMIMAGE_FILE_SYSTEM_TYPE),$(hide) echo "system_fs_type=$(BOARD_SYSTEMIMAGE_FILE_SYSTEM_TYPE)" >> $(1))
-$(if $(BOARD_SYSTEMIMAGE_PARTITION_SIZE),$(hide) echo "system_size=$(BOARD_SYSTEMIMAGE_PARTITION_SIZE)" >> $(1))
+# Use actual size of the system to create directly right size of the system, with spare 10M. Avoid using du -b since it's not support on BSD
+$(hide) echo "system_size=$$(du -sk $(TARGET_OUT) | awk '{print $$1*1024+$(if $(BOARD_SYSTEMIMAGE_PARTITION_PADDING),$(BOARD_SYSTEMIMAGE_PARTITION_PADDING),10485760)}')" >> $(1)
 $(if $(BOARD_SYSTEMIMAGE_JOURNAL_SIZE),$(hide) echo "system_journal_size=$(BOARD_SYSTEMIMAGE_JOURNAL_SIZE)" >> $(1))
 $(if $(BOARD_USERDATAIMAGE_FILE_SYSTEM_TYPE),$(hide) echo "userdata_fs_type=$(BOARD_USERDATAIMAGE_FILE_SYSTEM_TYPE)" >> $(1))
 $(if $(BOARD_USERDATAIMAGE_PARTITION_SIZE),$(hide) echo "userdata_size=$(BOARD_USERDATAIMAGE_PARTITION_SIZE)" >> $(1))
@@ -858,7 +859,9 @@ $(if $(BOARD_USERDATAEXTRAIMAGE_PARTITION_SIZE),$(hide) echo "userdataextra_size
 $(if $(BOARD_USERDATAEXTRAIMAGE_PARTITION_NAME),$(hide) echo "userdataextra_name=$(BOARD_USERDATAEXTRAIMAGE_PARTITION_NAME)" >> $(1))
 $(if $(BOARD_CACHEIMAGE_FILE_SYSTEM_TYPE),$(hide) echo "cache_fs_type=$(BOARD_CACHEIMAGE_FILE_SYSTEM_TYPE)" >> $(1))
 $(if $(BOARD_CACHEIMAGE_PARTITION_SIZE),$(hide) echo "cache_size=$(BOARD_CACHEIMAGE_PARTITION_SIZE)" >> $(1))
-$(if $(BOARD_UBUNTUROOTFSIMAGE_PARTITION_SIZE),$(hide) echo "ubuntu_rootfs_size=$(BOARD_UBUNTUROOTFSIMAGE_PARTITION_SIZE)" >> $(1))
+# if we don't have dedicated Ubuntu rootfs partition, use system instead
+$(if $(BOARD_UBUNTUROOTFSIMAGE_PARTITION_SIZE),$(hide) echo "ubuntu_rootfs_size=$(BOARD_UBUNTUROOTFSIMAGE_PARTITION_SIZE)" >> $(1),
+    $(hide) echo "ubuntu_rootfs_size=$(BOARD_SYSTEMIMAGE_PARTITION_SIZE)" >> $(1))
 $(if $(BOARD_UBUNTUCUSTOMIMAGE_PARTITION_SIZE),$(hide) echo "ubuntu_custom_size=$(BOARD_UBUNTUCUSTOMIMAGE_PARTITION_SIZE)" >> $(1))
 $(if $(BOARD_VENDORIMAGE_FILE_SYSTEM_TYPE),$(hide) echo "vendor_fs_type=$(BOARD_VENDORIMAGE_FILE_SYSTEM_TYPE)" >> $(1))
 $(if $(BOARD_VENDORIMAGE_PARTITION_SIZE),$(hide) echo "vendor_size=$(BOARD_VENDORIMAGE_PARTITION_SIZE)" >> $(1))

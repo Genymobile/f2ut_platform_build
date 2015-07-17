@@ -406,6 +406,8 @@ def main(argv):
   image_filename = os.path.basename(out_file)
   mount_point = ""
   if image_filename == "system.img":
+    # don't use sparse option for Android system.img
+    glob_dict.pop("extfs_sparse_flag", None)
     mount_point = "system"
   elif image_filename == "userdata.img":
     mount_point = "data"
