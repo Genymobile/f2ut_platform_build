@@ -78,6 +78,9 @@ dont_bother_goals := clean clobber dataclean installclean \
     userdataimage-nodeps userdatatarball-nodeps \
     cacheimage-nodeps \
     vendorimage-nodeps \
+    ubunturootfsimage-nodeps \
+    ubuntucustomimage-nodeps \
+    devicepackage \
     ramdisk-nodeps \
     bootimage-nodeps
 
@@ -1023,6 +1026,15 @@ cacheimage: $(INSTALLED_CACHEIMAGE_TARGET)
 
 .PHONY: vendorimage
 vendorimage: $(INSTALLED_VENDORIMAGE_TARGET)
+
+.PHONY: ubuntucustomimage
+ubuntucustomimage: $(INSTALLED_UBUNTU_CUSTOM_IMAGE_TARGET)
+
+.PHONY: ubunturootfsimage
+ubunturootfsimage: $(INSTALLED_UBUNTU_ROOTFS_IMAGE_TARGET)
+
+.PHONY: devicepackage
+devicepackage: $(INSTALL_DEVICE_PACKAGE_TARGET)
 
 .PHONY: bootimage
 bootimage: $(INSTALLED_BOOTIMAGE_TARGET)

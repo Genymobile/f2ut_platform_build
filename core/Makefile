@@ -481,8 +481,11 @@ INTERNAL_RAMDISK_FILES := $(filter $(TARGET_ROOT_OUT)/%, \
 	$(ALL_DEFAULT_INSTALLED_MODULES))
 
 # Default ramdisk comes now from Ubuntu
-BUILT_RAMDISK_TARGET := $(PRODUCT_OUT)/ramdisk.img
-BUILT_RAMDISK_TARGET_ANDROID := $(PRODUCT_OUT)/android-ramdisk.img
+INTERNAL_UBUNTURAMDISK_FILES := \
+    $(filter $(TARGET_OUT_UBUNTU_RAMDISK)/%,$(ALL_DEFAULT_INSTALLED_MODULES))
+
+BUILT_RAMDISK_TARGET := $(PRODUCT_OUT)/ramdisk-ubuntu.img
+BUILT_RAMDISK_TARGET_ANDROID := $(PRODUCT_OUT)/ramdisk-android.img
 
 # We just build this directly to the install location.
 INSTALLED_RAMDISK_TARGET_ANDROID := $(BUILT_RAMDISK_TARGET_ANDROID)
@@ -499,8 +502,9 @@ $(BOOT_ANDROID_RAMDISK_IMG): $(INSTALLED_RAMDISK_TARGET_ANDROID)
 # Download the Ubuntu Touch ramdisk from the archive
 TARGET_UBUNTU_INITRD_PKG := ubuntu-touch-generic-initrd
 TARGET_UBUNTU_INITRD_SERIES := vivid
-TARGET_OUT_UBUNTU_INITRD := $(TARGET_OUT_UBUNTU)/$(TARGET_UBUNTU_INITRD_PKG)
-TARGET_UBUNTU_INITRD := $(TARGET_OUT_UBUNTU_INITRD)/usr/lib/ubuntu-touch-generic-initrd/initrd.img-touch
+TARGET_OUT_UBUNTU_INITRD_PKG := $(TARGET_OUT_UBUNTU)/$(TARGET_UBUNTU_INITRD_PKG)
+TARGET_UBUNTU_INITRD_LP_IMG := $(TARGET_OUT_UBUNTU_INITRD_PKG)/usr/lib/ubuntu-touch-generic-initrd/initrd.img-touch
+TARGET_UBUNTU_INITRD_REPO := $(PWD)/ubuntu/ubuntu_prebuilt_initrd/initrd.img-touch
 INSTALLED_RAMDISK_TARGET := $(BUILT_RAMDISK_TARGET)
 ifeq ($(TARGET_ARCH),x86)
 TARGET_UBUNTU_ARCH := i386
@@ -509,19 +513,34 @@ TARGET_UBUNTU_ARCH := armhf
 endif
 
 .PHONY: $(INSTALLED_RAMDISK_TARGET)
-$(INSTALLED_RAMDISK_TARGET): $(MKBOOTFS) | $(MINIGZIP)
+$(INSTALLED_RAMDISK_TARGET): $(MKBOOTFS) $(INTERNAL_UBUNTURAMDISK_FILES) | $(MINIGZIP)
 	$(call pretty,"Target Ubuntu Touch ram disk: $@")
-	$(hide) rm -rf $(TARGET_OUT_UBUNTU_INITRD) $(TARGET_UBUNTU_ROOT_OUT)
-	$(hide) mkdir -p $(TARGET_OUT_UBUNTU_INITRD) $(TARGET_UBUNTU_ROOT_OUT)
-	$(hide) $(PULL_LP_BIN) $(TARGET_UBUNTU_INITRD_PKG) -o $(TARGET_OUT_UBUNTU_INITRD) -a $(TARGET_UBUNTU_ARCH) $(TARGET_UBUNTU_INITRD_SERIES)
-	$(hide) dpkg-deb -x $(TARGET_OUT_UBUNTU_INITRD)/$(TARGET_UBUNTU_INITRD_PKG)*.deb $(TARGET_OUT_UBUNTU_INITRD)
-	$(hide) $(ACP) $(TARGET_UBUNTU_INITRD) $@
-	$(hide) cd $(TARGET_UBUNTU_ROOT_OUT) && $(MINIGZIP) -c -d $@ | cpio -id
+	$(hide) rm -rf $(TARGET_OUT_UBUNTU_INITRD)
+	$(hide) mkdir -p $(TARGET_OUT_UBUNTU_INITRD) $(TARGET_OUT_UBUNTU_INITRD_PKG)
+ifdef BOARD_USE_LOCAL_INITRD
+	$(call pretty,"Using local initrd repo:$(TARGET_UBUNTU_INITRD_REPO)")
+	$(hide) $(ACP) $(TARGET_UBUNTU_INITRD_REPO) $@
+else
+	$(call pretty,"Downloading upstream initrd: $(TARGET_UBUNTU_INITRD_PKG) -o $(TARGET_OUT_UBUNTU_INITRD_PKG) -a $(TARGET_UBUNTU_ARCH) $(TARGET_UBUNTU_INITRD_SERIES)")
+	$(hide) rm -rf $(TARGET_OUT_UBUNTU_INITRD_PKG)
+	$(hide) mkdir -p $(TARGET_OUT_UBUNTU_INITRD_PKG)
+	$(hide) $(PULL_LP_BIN) $(TARGET_UBUNTU_INITRD_PKG) -o $(TARGET_OUT_UBUNTU_INITRD_PKG) -a $(TARGET_UBUNTU_ARCH) $(TARGET_UBUNTU_INITRD_SERIES)
+	$(hide) dpkg-deb -x $(TARGET_OUT_UBUNTU_INITRD_PKG)/$(TARGET_UBUNTU_INITRD_PKG)*.deb $(TARGET_OUT_UBUNTU_INITRD_PKG)
+	$(hide) $(ACP) $(TARGET_UBUNTU_INITRD_LP_IMG) $@
+endif
+	$(hide) cd $(TARGET_OUT_UBUNTU_INITRD) && $(MINIGZIP) -c -d $@ | cpio -id
+ifdef BOARD_OVERLAY_INITRD
+	$(hide) if [ -d $(TARGET_OUT_UBUNTU_RAMDISK) ]; then cp -r $(TARGET_OUT_UBUNTU_RAMDISK)/* $(TARGET_OUT_UBUNTU_INITRD); fi
+	$(call pretty,"Repacking ubuntu ramdisk to: $@")
+	$(hide) cd $(TARGET_OUT_UBUNTU_INITRD) && find . | cpio -o -H newc | $(MINIGZIP) > $@
+endif
 
 .PHONY: ramdisk-nodeps
 ramdisk-nodeps: $(MKBOOTFS) | $(MINIGZIP)
 	@echo "make $@: ignoring dependencies"
-	$(hide) $(MKBOOTFS) $(TARGET_ROOT_OUT) | $(MINIGZIP) > $(INSTALLED_RAMDISK_TARGET)
+	$(call pretty,"Target Android ram disk: $@")
+	$(hide) $(MKBOOTFS) $(TARGET_ROOT_OUT) | $(MINIGZIP) > $(INSTALLED_RAMDISK_TARGET_ANDROID)
+	$(hide) $(ACP) $(INSTALLED_RAMDISK_TARGET_ANDROID) $(BOOT_ANDROID_RAMDISK_IMG)
 
 ifneq ($(strip $(TARGET_NO_KERNEL)),true)
 
@@ -584,6 +603,8 @@ $(INSTALLED_BOOTIMAGE_TARGET): $(MKEXT2IMG) $(INTERNAL_BOOTIMAGE_FILES)
 .PHONY: bootimage-nodeps
 bootimage-nodeps: $(MKEXT2IMG)
 	@echo "make $@: ignoring dependencies"
+	$(call pretty,"Repacking ubuntu ramdisk to: $(INSTALLED_RAMDISK_TARGET)")
+	$(hide) cd $(TARGET_OUT_UBUNTU_INITRD) && find . | cpio -o -H newc | $(MINIGZIP) > $(INSTALLED_RAMDISK_TARGET)
 	$(hide) $(MKEXT2BOOTIMG) $(INTERNAL_BOOTIMAGE_ARGS) --output $(INSTALLED_BOOTIMAGE_TARGET)
 
 else ifndef BOARD_CUSTOM_BOOTIMG_MK
@@ -603,6 +624,8 @@ $(INSTALLED_BOOTIMAGE_TARGET): $(MKBOOTIMG) $(INTERNAL_BOOTIMAGE_FILES) $(BOOT_S
 .PHONY: bootimage-nodeps
 bootimage-nodeps: $(MKBOOTIMG) $(BOOT_SIGNER)
 	@echo "make $@: ignoring dependencies"
+	$(call pretty,"Repacking ubuntu ramdisk to: $(INSTALLED_RAMDISK_TARGET)")
+	$(hide) cd $(TARGET_OUT_UBUNTU_INITRD) && find . | cpio -o -H newc | $(MINIGZIP) >$(INSTALLED_RAMDISK_TARGET)
 	$(hide) $(MKBOOTIMG) $(INTERNAL_BOOTIMAGE_ARGS) $(BOARD_MKBOOTIMG_ARGS) --output $(INSTALLED_BOOTIMAGE_TARGET)
 	$(BOOT_SIGNER) /boot $(INSTALLED_BOOTIMAGE_TARGET) $(PRODUCTS.$(INTERNAL_PRODUCT).PRODUCT_VERITY_SIGNING_KEY).pk8 $(PRODUCTS.$(INTERNAL_PRODUCT).PRODUCT_VERITY_SIGNING_KEY).x509.pem $(INSTALLED_BOOTIMAGE_TARGET)
 	$(hide) $(call assert-max-image-size,$(INSTALLED_BOOTIMAGE_TARGET),$(BOARD_BOOTIMAGE_PARTITION_SIZE))
@@ -625,6 +648,8 @@ $(INSTALLED_BOOTIMAGE_TARGET): $(MKBOOTIMG) $(INTERNAL_BOOTIMAGE_FILES) $(BOOTIM
 .PHONY: bootimage-nodeps
 bootimage-nodeps: $(MKBOOTIMG)
 	@echo "make $@: ignoring dependencies"
+	$(call pretty,"Repacking ubuntu ramdisk to: $(INSTALLED_RAMDISK_TARGET)")
+	$(hide) cd $(TARGET_OUT_UBUNTU_INITRD) && find . | cpio -o -H newc | $(MINIGZIP) > $(INSTALLED_RAMDISK_TARGET)
 	$(hide) $(MKBOOTIMG) $(INTERNAL_BOOTIMAGE_ARGS) $(BOARD_MKBOOTIMG_ARGS) --output $(INSTALLED_BOOTIMAGE_TARGET)
 	$(hide) $(call assert-max-image-size,$(INSTALLED_BOOTIMAGE_TARGET),$(BOARD_BOOTIMAGE_PARTITION_SIZE))
 	@echo -e ${CL_INS}"Made boot image: $@"${CL_RST}
@@ -802,6 +827,7 @@ INTERNAL_USERIMAGES_DEPS :=
 ifeq ($(INTERNAL_USERIMAGES_USE_EXT),true)
 INTERNAL_USERIMAGES_DEPS += $(MKEXTUSERIMG) $(MAKE_EXT4FS) $(E2FSCK)
 endif
+INTERNAL_USERIMAGES_DEPS += $(MKEXTUBUNTUIMG)
 ifeq ($(INTERNAL_USERIMAGES_USE_F2FS),true)
 INTERNAL_USERIMAGES_DEPS += $(MKF2FSUSERIMG) $(MAKE_F2FS)
 endif
@@ -832,6 +858,8 @@ $(if $(BOARD_USERDATAEXTRAIMAGE_PARTITION_SIZE),$(hide) echo "userdataextra_size
 $(if $(BOARD_USERDATAEXTRAIMAGE_PARTITION_NAME),$(hide) echo "userdataextra_name=$(BOARD_USERDATAEXTRAIMAGE_PARTITION_NAME)" >> $(1))
 $(if $(BOARD_CACHEIMAGE_FILE_SYSTEM_TYPE),$(hide) echo "cache_fs_type=$(BOARD_CACHEIMAGE_FILE_SYSTEM_TYPE)" >> $(1))
 $(if $(BOARD_CACHEIMAGE_PARTITION_SIZE),$(hide) echo "cache_size=$(BOARD_CACHEIMAGE_PARTITION_SIZE)" >> $(1))
+$(if $(BOARD_UBUNTUROOTFSIMAGE_PARTITION_SIZE),$(hide) echo "ubuntu_rootfs_size=$(BOARD_UBUNTUROOTFSIMAGE_PARTITION_SIZE)" >> $(1))
+$(if $(BOARD_UBUNTUCUSTOMIMAGE_PARTITION_SIZE),$(hide) echo "ubuntu_custom_size=$(BOARD_UBUNTUCUSTOMIMAGE_PARTITION_SIZE)" >> $(1))
 $(if $(BOARD_VENDORIMAGE_FILE_SYSTEM_TYPE),$(hide) echo "vendor_fs_type=$(BOARD_VENDORIMAGE_FILE_SYSTEM_TYPE)" >> $(1))
 $(if $(BOARD_VENDORIMAGE_PARTITION_SIZE),$(hide) echo "vendor_size=$(BOARD_VENDORIMAGE_PARTITION_SIZE)" >> $(1))
 $(if $(BOARD_VENDORIMAGE_JOURNAL_SIZE),$(hide) echo "vendor_journal_size=$(BOARD_VENDORIMAGE_JOURNAL_SIZE)" >> $(1))
@@ -841,6 +869,8 @@ $(if $(INTERNAL_USERIMAGES_SPARSE_EXT_FLAG),$(hide) echo "extfs_sparse_flag=$(IN
 $(if $(INTERNAL_TRANSPARENT_COMPRESSION_METHOD),$(hide) echo "transparent_compression_method=$(INTERNAL_TRANSPARENT_COMPRESSION_METHOD)" >> $(1))
 $(if $(mkyaffs2_extra_flags),$(hide) echo "mkyaffs2_extra_flags=$(mkyaffs2_extra_flags)" >> $(1))
 $(hide) echo "selinux_fc=$(SELINUX_FC)" >> $(1)
+$(hide) echo "ubuntu_rootfs_content=$(TARGET_OUT_UBUNTU_ROOTFS).content" >> $(1)
+$(hide) echo "ubuntu_custom_content=$(TARGET_OUT_UBUNTU_CUSTOM).content" >> $(1)
 $(if $(PRODUCTS.$(INTERNAL_PRODUCT).PRODUCT_SUPPORTS_VERITY),$(hide) echo "verity=$(PRODUCTS.$(INTERNAL_PRODUCT).PRODUCT_SUPPORTS_VERITY)" >> $(1))
 $(if $(PRODUCTS.$(INTERNAL_PRODUCT).PRODUCT_SUPPORTS_VERITY),$(hide) echo "verity_key=$(PRODUCTS.$(INTERNAL_PRODUCT).PRODUCT_VERITY_SIGNING_KEY)" >> $(1))
 $(if $(PRODUCTS.$(INTERNAL_PRODUCT).PRODUCT_SUPPORTS_VERITY),$(hide) echo "verity_signer_cmd=$(VERITY_SIGNER)" >> $(1))
@@ -1350,6 +1380,131 @@ $(INSTALLED_USERDATATARBALL_TARGET): $(FS_GET_STATS) $(INTERNAL_USERDATAIMAGE_FI
 userdatatarball-nodeps: $(FS_GET_STATS)
 	$(build-userdatatarball-target)
 
+# -----------------------------------------------------------------
+# Ubuntu Rootfs Image - Start
+INTERNAL_UBUNTUROOTFSIMAGE_FILES := \
+    $(filter $(TARGET_OUT_UBUNTU_ROOTFS)/%,$(ALL_DEFAULT_INSTALLED_MODULES))
+
+ubuntu_rootfs_image_intermediates := \
+    $(call intermediates-dir-for,PACKAGING,ubunturootfs)
+BUILT_UBUNTU_ROOTFS_IMAGE_TARGET := $(PRODUCT_OUT)/ubunturootfs.img
+
+define build-ubunturootfs-image-target
+    $(call pretty,"Target Ubuntu rootfs fs image: $(INSTALLED_UBUNTU_ROOTFS_IMAGE_TARGET)")
+    @mkdir -p $(TARGET_OUT_UBUNTU_ROOTFS)
+    @mkdir -p $(ubuntu_rootfs_image_intermediates) && rm -rf $(ubuntu_rootfs_image_intermediates)/ubuntu_rootfs_image_info.txt
+    $(call generate-userimage-prop-dictionary, $(ubuntu_rootfs_image_intermediates)/ubuntu_rootfs_image_info.txt, skip_fsck=true)
+    $(hide) PATH=$(foreach p,$(INTERNAL_USERIMAGES_BINARY_PATHS),$(p):)$$PATH \
+        ./build/tools/releasetools/build_image.py \
+        $(TARGET_OUT_UBUNTU_ROOTFS) $(ubuntu_rootfs_image_intermediates)/ubuntu_rootfs_image_info.txt $(INSTALLED_UBUNTU_ROOTFS_IMAGE_TARGET)
+    $(hide) $(call assert-max-image-size,$(INSTALLED_UBUNTU_ROOTFS_IMAGE_TARGET),$(BOARD_UBUNTUIMAGE_PARTITION_SIZE),yaffs)
+    $(if $(BOARD_UBUNTUROOTFSIMAGE_PARTITION_SIZE),,
+        $(hide) mv $(INSTALLED_UBUNTU_ROOTFS_IMAGE_TARGET) $(PRODUCT_OUT)/system.img)
+endef
+
+# We just build this directly to the install location.
+ROOTFS_PACKAGES := $(ubuntu_rootfs_image_intermediates)/ubuntu_rootfs_image_content
+INSTALLED_UBUNTU_ROOTFS_IMAGE_TARGET := $(BUILT_UBUNTU_ROOTFS_IMAGE_TARGET)
+$(INSTALLED_UBUNTU_ROOTFS_IMAGE_TARGET): $(INTERNAL_USERIMAGES_DEPS) \
+                                   $(INTERNAL_UBUNTUROOTFSIMAGE_FILES) $(INSTALL_DEVICE_PACKAGE_TARGET)
+
+UBUNTU_PREPARE_PACKAGES := ubuntu/prebuilts/prepare-ubuntu-packages-for-build
+UBUNTU_UNPACK_ROOTFS := ubuntu/prebuilts/unpack_rootfs.sh
+.PHONY: ubunturootfsimage
+ubunturootfsimage: $(INSTALLED_UBUNTU_ROOTFS_IMAGE_TARGET)
+	@mkdir -p $(TARGET_OUT_UBUNTU_ROOTFS)
+	@mkdir -p $(ubuntu_rootfs_image_intermediates)
+	$(hide) if [ -z "$$UBUNTU_ROOTFS_PACKAGES" ]; then \
+		ROOTFS_PACKAGES=$(ROOTFS_PACKAGES) $(SHELL) $(UBUNTU_PREPARE_PACKAGES); \
+		else \
+		echo "export UBUNTU_ROOTFS_PACKAGES=\"$$UBUNTU_ROOTFS_PACKAGES\"" > $(ROOTFS_PACKAGES);\
+		fi
+	@echo "Unpacking Ubuntu rootfs packages..."
+	$(hide) $(SHELL) $(UBUNTU_UNPACK_ROOTFS) $(TARGET_OUT_UBUNTU_ROOTFS) $(ROOTFS_PACKAGES)
+	$(hide) if [ -d $(devicepackage_intermediates)/system ]; then\
+		cp -r $(devicepackage_intermediates)/system/.  $(TARGET_OUT_UBUNTU_ROOTFS);\
+		else \
+		cp $(BUILT_SYSTEMIMAGE) $(TARGET_OUT_UBUNTU_ROOTFS)/var/lib/lxc/android/;\
+		fi
+	$(build-ubunturootfs-image-target)
+
+.PHONY: ubunturootfsimage-nodeps
+ubunturootfsimage-nodeps: | $(INTERNAL_USERIMAGES_DEPS)
+	$(build-ubunturootfs-image-target)
+
+# Ubuntu Rootfs Image - End
+
+# -----------------------------------------------------------------
+# Ubuntu Custom Image - Start
+INTERNAL_UBUNTUCUSTOMIMAGE_FILES := \
+    $(filter $(TARGET_OUT_UBUNTU_CUSTOM)/%,$(ALL_DEFAULT_INSTALLED_MODULES))
+
+ubuntu_custom_image_intermediates := \
+    $(call intermediates-dir-for,PACKAGING,ubuntucustom)
+BUILT_UBUNTU_CUSTOM_IMAGE_TARGET := $(PRODUCT_OUT)/ubuntucustom$(UBUNTU_CUSTOM_TAG).img
+
+define build-ubuntucustom-image-target
+    $(call pretty,"Target Ubuntu custom fs image: $(INSTALLED_UBUNTU_CUSTOM_IMAGE_TARGET)")
+    @mkdir -p $(TARGET_OUT_UBUNTU_CUSTOM)
+    @mkdir -p $(ubuntu_custom_image_intermediates) && rm -rf $(ubuntu_custom_image_intermediates)/ubuntu_custom_image_info.txt
+    $(call generate-userimage-prop-dictionary, $(ubuntu_custom_image_intermediates)/ubuntu_custom_image_info.txt, skip_fsck=true)
+    $(hide) PATH=$(foreach p,$(INTERNAL_USERIMAGES_BINARY_PATHS),$(p):)$$PATH \
+        ./build/tools/releasetools/build_image.py \
+        $(TARGET_OUT_UBUNTU_CUSTOM) $(ubuntu_custom_image_intermediates)/ubuntu_custom_image_info.txt $(INSTALLED_UBUNTU_CUSTOM_IMAGE_TARGET)
+    $(hide) $(call assert-max-image-size,$(INSTALLED_UBUNTU_CUSTOM_IMAGE_TARGET),$(BOARD_UCUSTOMIMAGE_PARTITION_SIZE),yaffs)
+endef
+
+# We just build this directly to the install location.
+INSTALLED_UBUNTU_CUSTOM_IMAGE_TARGET := $(BUILT_UBUNTU_CUSTOM_IMAGE_TARGET)
+$(INSTALLED_UBUNTU_CUSTOM_IMAGE_TARGET): $(INTERNAL_USERIMAGES_DEPS) \
+                                   $(INTERNAL_UBUNTUCUSTOMIMAGE_FILES)
+	$(build-ubuntucustom-image-target)
+
+.PHONY: ubuntucustomimage-nodeps
+ubuntucustomimage-nodeps: | $(INTERNAL_USERIMAGES_DEPS)
+	$(build-ubuntucustom-image-target)
+
+# Ubuntu Custom Image - End
+
+# Ubuntu device package - Start
+# Default ramdisk comes now from Ubuntu
+INTERNAL_DEVICE_PACKAGE_FILES := \
+    $(filter $(PRODUCT_OUT)/pre-update.sh,$(ALL_DEFAULT_INSTALLED_MODULES)) \
+    $(filter $(PRODUCT_OUT)/post-update.sh,$(ALL_DEFAULT_INSTALLED_MODULES))
+
+INSTALL_DEVICE_PACKAGE_TARGET := $(PRODUCT_OUT)/device.tar.xz
+BUILT_UBUNTU_DEVICE_PACKAGE_TOOL := build/tools/releasetools/device_package_from_target_files.sh
+devicepackage_intermediates := \
+    $(call intermediates-dir-for,PACKAGING,devicepackage)
+
+define build-ubuntu-device-package-target
+    $(call pretty,"Creating Target Ubuntu device package: $(INSTALL_DEVICE_PACKAGE_TARGET)")
+    $(hide) PWD="$(PWD)" \
+            PRODUCT_OUT="$(PRODUCT_OUT)" \
+            BUILT_SYSTEMIMAGE="$(BUILT_SYSTEMIMAGE)" \
+            PACKAGING_INTERMEDIATES="$(devicepackage_intermediates)" \
+            DEVICE_PACKAGE_TARGET="$(INSTALL_DEVICE_PACKAGE_TARGET)" \
+            RAW_PARTITIONS="$(INSTALLED_BOOTIMAGE_TARGET):boot.img \
+                $(INSTALLED_RECOVERYIMAGE_TARGET):recovery.img" \
+            DEVICE_BUILD_ID="true" \
+            IGNORE_BLOBS="ubunturootfs.img ubuntucustom.img system.img cache.img userdata.img boot.img recovery.img" \
+            DEVICE_PACKAGE_OVERLAY=$(DEVICE_PACKAGE_OVERLAY) \
+            KEYPATH=$(KEYPATH) \
+        $(SHELL) $(BUILT_UBUNTU_DEVICE_PACKAGE_TOOL)
+    $(call pretty,"Target device package for Ubuntu: $@")
+endef
+
+$(INSTALL_DEVICE_PACKAGE_TARGET): $(INTERNAL_USERIMAGES_DEPS) \
+                             $(INSTALLED_SYSTEMIMAGE) \
+                             $(INSTALLED_BOOTIMAGE_TARGET) \
+                             $(INSTALLED_RECOVERYIMAGE_TARGET) \
+                             $(INTERNAL_DEVICE_PACKAGE_FILES)
+	$(build-ubuntu-device-package-target)
+
+.PHONY: devicepackage-nodeps
+devicepackage-nodeps: | $(INTERNAL_USERIMAGES_DEPS)
+	$(build-ubuntu-device-package-target)
+# Ubuntu device package - End
 
 # -----------------------------------------------------------------
 # cache partition image
@@ -1441,6 +1596,7 @@ DISTTOOLS :=  $(HOST_OUT_EXECUTABLES)/minigzip \
 	  $(HOST_OUT_EXECUTABLES)/imgdiff \
 	  $(HOST_OUT_JAVA_LIBRARIES)/dumpkey.jar \
 	  $(HOST_OUT_EXECUTABLES)/mkuserimg.sh \
+	  $(HOST_OUT_EXECUTABLES)/mkubuntuimg.sh \
 	  $(HOST_OUT_EXECUTABLES)/make_ext4fs \
 	  $(HOST_OUT_EXECUTABLES)/simg2img \
 	  $(HOST_OUT_EXECUTABLES)/e2fsck \

@@ -220,6 +220,7 @@ def BuildImage(in_dir, prop_dict, out_file,
   build_command = []
   fs_type = prop_dict.get("fs_type", "")
   run_fsck = False
+  ubuntu_image = (os.path.basename(out_file).startswith("ubuntu"))
 
   is_verity_partition = "verity_block_device" in prop_dict
   verity_supported = prop_dict.get("verity") == "true"
@@ -233,10 +234,16 @@ def BuildImage(in_dir, prop_dict, out_file,
     prop_dict["original_partition_size"] = str(partition_size)
 
   if fs_type.startswith("ext"):
-    build_command = ["mkuserimg.sh"]
+    if ubuntu_image:
+      build_command = ["mkubuntuimg.sh"]
+    else:
+      build_command = ["mkuserimg.sh"]
     if "extfs_sparse_flag" in prop_dict:
       build_command.append(prop_dict["extfs_sparse_flag"])
       #run_fsck = True
+    if not ubuntu_image and "extfs_inodes" in prop_dict:
+      build_command.append("-i")
+      build_command.append(prop_dict["extfs_inodes"])
     if "is_userdataextra" in prop_dict:
       build_command.extend([in_dir, out_file, fs_type,
                            "data"])
@@ -256,8 +263,10 @@ def BuildImage(in_dir, prop_dict, out_file,
       build_command.extend(["-M", prop_dict["transparent_compression_method"]])
     if fc_config is not None:
       build_command.append(fc_config)
-    elif "selinux_fc" in prop_dict:
+    elif not ubuntu_image and "selinux_fc" in prop_dict:
       build_command.append(prop_dict["selinux_fc"])
+    elif ubuntu_image and "fs_content" in prop_dict:
+      build_command.append(prop_dict["fs_content"])
   elif fs_type.startswith("f2fs"):
     build_command = ["mkf2fsuserimg.sh"]
     build_command.extend([out_file, prop_dict["partition_size"]])
@@ -353,6 +362,19 @@ def ImagePropFromGlobalDict(glob_dict, mount_point):
     copy_prop("fs_type", "fs_type")
     copy_prop("oem_size", "partition_size")
     copy_prop("oem_journal_size", "journal_size")
+  elif mount_point == "ubuntu-custom":
+    copy_prop("fs_type", "fs_type")
+    copy_prop("ubuntu_custom_size", "partition_size")
+    copy_prop("ubuntu_custom_content", "fs_content")
+    # Actual mount point for Ubuntu is also custom, correct it
+    del d["mount_point"]
+    d["mount_point"] = "custom"
+    del d["selinux_fc"]
+  elif mount_point == "/":
+    copy_prop("fs_type", "fs_type")
+    copy_prop("ubuntu_rootfs_size", "partition_size")
+    copy_prop("ubuntu_rootfs_content", "fs_content")
+    del d["selinux_fc"]
 
   return d
 
@@ -391,6 +413,11 @@ def main(argv):
     mount_point = "cache"
   elif image_filename == "vendor.img":
     mount_point = "vendor"
+  # Allow Ubuntu custom images to have custom tags
+  elif image_filename.startswith("ubuntucustom") and image_filename.endswith(".img"):
+    mount_point = "ubuntu-custom"
+  elif image_filename == "ubunturootfs.img":
+    mount_point = "/"
   elif image_filename == "oem.img":
     mount_point = "oem"
   else:

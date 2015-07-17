@@ -177,6 +177,8 @@ def LoadInfoDict(input):
   makeint("vendor_size")
   makeint("userdata_size")
   makeint("cache_size")
+  makeint("ubuntu_custom_size")
+  makeint("ubuntu_rootfs_size")
   makeint("recovery_size")
   makeint("boot_size")
   makeint("fstab_version")
