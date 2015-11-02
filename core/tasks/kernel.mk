@@ -38,12 +38,6 @@ ifneq ($(TARGET_KERNEL_UBUNTU_PPA_TEAM),)
 endif
 TARGET_OUT_UBUNTU_KERNEL := $(TARGET_OUT_UBUNTU)/kernel
 
-ifeq ($(TARGET_ARCH),x86)
-TARGET_UBUNTU_ARCH := i386
-else
-TARGET_UBUNTU_ARCH := armhf
-endif
-
 ifneq ($(BOARD_KERNEL_IMAGE_NAME),)
 	TARGET_PREBUILT_INT_KERNEL_TYPE := $(BOARD_KERNEL_IMAGE_NAME)
 	TARGET_PREBUILT_INT_KERNEL := $(KERNEL_OUT)/arch/$(TARGET_ARCH)/boot/$(TARGET_PREBUILT_INT_KERNEL_TYPE)
@@ -160,11 +154,10 @@ $(TARGET_OUT_UBUNTU_KERNEL):
 	$(hide) rm -rf $(KERNEL_MODULES_OUT)
 	$(hide) mkdir -p $(TARGET_OUT_UBUNTU_KERNEL)
 	$(hide) mkdir -p $(KERNEL_MODULES_OUT)
-	$(hide) mkdir -p $(TARGET_OUT)/boot
 
 .PHONY: $(TARGET_OUT_UBUNTU_KERNEL)/vmlinuz
 $(TARGET_OUT_UBUNTU_KERNEL)/vmlinuz: $(TARGET_OUT_UBUNTU_KERNEL) $(KERNEL_HEADERS_INSTALL)
-	$(hide) $(PULL_LP_BIN) $(PULL_LP_BIN_EXTRA_OPTS) $(TARGET_KERNEL_UBUNTU_META) -o $(TARGET_OUT_UBUNTU_KERNEL) -a $(TARGET_UBUNTU_ARCH) $(TARGET_KERNEL_UBUNTU_SERIES)
+	$(hide) $(PULL_LP_BIN) $(PULL_LP_BIN_EXTRA_OPTS) $(TARGET_KERNEL_UBUNTU_META) -o $(TARGET_OUT_UBUNTU_KERNEL) $(TARGET_KERNEL_UBUNTU_SERIES)
 	$(hide) IFS=", "; for dep in \
 		`dpkg-deb -f $(TARGET_OUT_UBUNTU_KERNEL)/$(TARGET_KERNEL_UBUNTU_META)_*.deb Depends`; do \
 			if echo $$dep | grep -q "linux-image-"; then \
@@ -172,11 +165,10 @@ $(TARGET_OUT_UBUNTU_KERNEL)/vmlinuz: $(TARGET_OUT_UBUNTU_KERNEL) $(KERNEL_HEADER
 			fi; \
 		done; \
 		if [ -n "$$kernel_image" ]; then \
-			$(PULL_LP_BIN) $(PULL_LP_BIN_EXTRA_OPTS) $$kernel_image -o $(TARGET_OUT_UBUNTU_KERNEL) -a $(TARGET_UBUNTU_ARCH) $(TARGET_KERNEL_UBUNTU_SERIES); \
+			$(PULL_LP_BIN) $(PULL_LP_BIN_EXTRA_OPTS) $$kernel_image -o $(TARGET_OUT_UBUNTU_KERNEL) $(TARGET_KERNEL_UBUNTU_SERIES); \
 			dpkg-deb -x $(TARGET_OUT_UBUNTU_KERNEL)/linux-image-[0-9]*.deb $(TARGET_OUT_UBUNTU_KERNEL); \
 			kernel_version=$${kernel_image#linux-image-}; \
 			cp -v $(TARGET_OUT_UBUNTU_KERNEL)/boot/vmlinuz-$$kernel_version $(TARGET_OUT_UBUNTU_KERNEL)/vmlinuz; \
-			cp -a $(TARGET_OUT_UBUNTU_KERNEL)/boot/*-$$kernel_version $(TARGET_OUT)/boot/; \
 			cp -a $(TARGET_OUT_UBUNTU_KERNEL)/lib/modules/$$kernel_version $(KERNEL_MODULES_OUT); \
 			depmod -a -b $(TARGET_OUT) $$kernel_version; \
 		else \
