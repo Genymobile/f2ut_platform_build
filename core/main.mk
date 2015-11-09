@@ -522,6 +522,7 @@ subdirs := \
 	external/libselinux \
 	external/libsepol \
 	external/libunwind \
+	external/lz4 \
 	external/mdnsresponder \
 	external/mksh \
 	external/openssl \
@@ -589,6 +590,7 @@ subdirs := \
 	system/media/camera \
 	system/media/audio_route \
 	system/netd \
+	system/qcom \
 	system/su \
 	system/security/keystore \
 	system/security/softkeymaster
@@ -604,6 +606,9 @@ subdirs += \
 	device/generic \
 	device/lge \
 	device/samsung \
+	device/qcom/common \
+	vendor/oneplus/bacon \
+	vendor/oppo/msm8974-common \
 	vendor/asus \
 	vendor/audience \
 	vendor/broadcom \
