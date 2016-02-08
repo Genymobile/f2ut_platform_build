@@ -196,7 +196,7 @@ rs_compatibility_jni_libs :=
 include $(BUILD_SYSTEM)/android_manifest.mk
 
 #################################
-include $(BUILD_SYSTEM)/java.mk
+
 #################################
 
 LOCAL_SDK_RES_VERSION:=$(strip $(LOCAL_SDK_RES_VERSION))
