@@ -111,7 +111,7 @@ endif
 
 endif  # LOCAL_STRIP_MODULE not true
 
-ifeq ($(LOCAL_MODULE_CLASS),APPS)
+ifeq ($(LOCAL_MODULE_CLASS),APPS_)
 
 
 else # LOCAL_MODULE_CLASS != APPS
