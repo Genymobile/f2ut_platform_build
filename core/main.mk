@@ -540,6 +540,7 @@ subdirs := \
 	external/speex \
 	external/sqlite \
 	external/stlport \
+	external/libtar \
 	external/tinycompress \
 	external/tinyalsa \
 	external/tremolo \
