@@ -497,6 +497,7 @@ subdirs := \
 	external/compiler-rt \
 	external/e2fsprogs \
 	external/expat \
+	external/exfat \
 	external/flac \
 	external/freetype \
 	external/fsck_msdos \
