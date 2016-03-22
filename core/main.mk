@@ -501,6 +501,7 @@ subdirs := \
 	external/flac \
 	external/freetype \
 	external/fsck_msdos \
+	external/fuse \
 	external/gcc-demangle \
 	external/genext2fs \
 	external/giflib \
