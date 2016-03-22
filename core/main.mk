@@ -525,6 +525,7 @@ subdirs := \
 	external/libsepol \
 	external/libunwind \
 	external/lz4 \
+	external/lzma \
 	external/mdnsresponder \
 	external/mksh \
 	external/openssl \
