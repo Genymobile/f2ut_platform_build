@@ -451,7 +451,6 @@ event-log-tags: $(event_log_tags_file)
 
 ALL_DEFAULT_INSTALLED_MODULES += $(event_log_tags_file)
 
-
 # #################################################################
 # Targets for boot/OS images
 # #################################################################
@@ -584,6 +583,8 @@ endif
 
 INSTALLED_BOOTIMAGE_TARGET_ANDROID := $(PRODUCT_OUT)/android-boot.img
 
+INSTALLED_BOOTIMAGE_TARGET := $(PRODUCT_OUT)/boot.img
+
 ifeq ($(TARGET_BOOTIMAGE_USE_EXT2),true)
 tmp_dir_for_image := $(call intermediates-dir-for,EXECUTABLES,boot_img)/bootimg
 INTERNAL_BOOTIMAGE_ARGS_COMMON += --tmpdir $(tmp_dir_for_image)
@@ -666,6 +667,7 @@ else	# TARGET_NO_KERNEL
 INSTALLED_BOOTIMAGE_TARGET := $(INSTALLED_RAMDISK_TARGET)
 INSTALLED_BOOTIMAGE_TARGET_ANDROID := $(INSTALLED_RAMDISK_TARGET_ANDROID)
 endif
+
 
 # -----------------------------------------------------------------
 # NOTICE files
