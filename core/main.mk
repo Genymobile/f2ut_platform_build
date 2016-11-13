@@ -607,6 +607,7 @@ endif
 # device and vendor
 subdirs += \
 	device/asus \
+	device/fairphone \
 	device/generic \
 	device/lge \
 	device/samsung \
