@@ -495,6 +495,7 @@ subdirs := \
 	external/bzip2 \
 	external/checkpolicy \
 	external/compiler-rt \
+	external/connectivity \
 	external/e2fsprogs \
 	external/expat \
 	external/exfat \
