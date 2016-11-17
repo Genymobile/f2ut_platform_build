@@ -525,6 +525,7 @@ subdirs := \
 	external/libselinux \
 	external/libsepol \
 	external/libunwind \
+        external/libxml2 \
 	external/lz4 \
 	external/lzma \
 	external/mdnsresponder \
