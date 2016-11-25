@@ -492,10 +492,12 @@ subdirs := \
 	development/tools/emulator/opengl \
 	external/aac \
 	external/busybox \
+	external/bson \
 	external/bzip2 \
 	external/checkpolicy \
 	external/compiler-rt \
 	external/connectivity \
+	external/curl \
 	external/e2fsprogs \
 	external/expat \
 	external/exfat \
@@ -525,7 +527,7 @@ subdirs := \
 	external/libselinux \
 	external/libsepol \
 	external/libunwind \
-        external/libxml2 \
+	external/libxml2 \
 	external/lz4 \
 	external/lzma \
 	external/mdnsresponder \
