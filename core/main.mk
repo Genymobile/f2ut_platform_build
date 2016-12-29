@@ -491,6 +491,7 @@ subdirs := \
 	build/tools/zipalign \
 	development/tools/emulator/opengl \
 	external/aac \
+	external/audioflingerglue \
 	external/busybox \
 	external/bson \
 	external/bzip2 \
