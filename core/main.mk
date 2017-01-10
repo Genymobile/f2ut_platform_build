@@ -511,6 +511,8 @@ subdirs := \
 	external/giflib \
 	external/gtest \
 	external/icu/icu4c \
+	external/iproute2 \
+	external/iptables \
 	external/jemalloc \
 	external/jhead \
 	external/jpeg \
